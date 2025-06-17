@@ -1,0 +1,572 @@
+{
+  "FastAPI Import": {
+    "prefix": "fastimp",
+    "body": [
+      "from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query, Path, Body, Form, File, UploadFile, BackgroundTasks, Request",
+      "from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm",
+      "from fastapi.middleware.cors import CORSMiddleware",
+      "from fastapi.responses import JSONResponse, HTMLResponse, FileResponse",
+      "from fastapi.staticfiles import StaticFiles",
+      "from fastapi.templating import Jinja2Templates",
+      "from pydantic import BaseModel, Field, EmailStr",
+      "from typing import Annotated, Optional, List",
+      "from datetime import datetime, timedelta",
+      "from jose import JWTError, jwt",
+      "from passlib.context import CryptContext"
+    ],
+    "description": "Essential FastAPI imports"
+  },
+
+  "FastAPI Instance": {
+    "prefix": "fastapp",
+    "body": [
+      "app = FastAPI(",
+      "    title=\"${1:API Title}\",",
+      "    description=\"${2:API Description}\",",
+      "    version=\"${3:0.1.0}\",",
+      "    docs_url=\"/docs\",",
+      "    redoc_url=\"/redoc\"",
+      ")"
+    ],
+    "description": "Create FastAPI instance"
+  },
+
+  "APIRouter": {
+    "prefix": "fastrouter",
+    "body": [
+      "router = APIRouter(",
+      "    prefix=\"/${1:endpoints}\",",
+      "    tags=[\"${2:TagName}\"],",
+      "    responses={404: {\"description\": \"Not found\"}}",
+      ")"
+    ],
+    "description": "Create API router"
+  },
+
+  "Pydantic Model": {
+    "prefix": "fastmodel",
+    "body": [
+      "class ${1:ModelName}(BaseModel):",
+      "    ${2:field_name}: ${3:str}",
+      "    email: EmailStr",
+      "    age: int = Field(..., gt=0, example=25)",
+      "    is_active: bool = True",
+      "    tags: List[str] = []",
+      "",
+      "    class Config:",
+      "        schema_extra = {",
+      "            \"example\": {",
+      "                \"email\": \"user@example.com\",",
+      "                \"age\": 30,",
+      "                \"is_active\": true,",
+      "                \"tags\": [\"fastapi\", \"python\"]",
+      "            }",
+      "        }"
+    ],
+    "description": "Pydantic model with validation"
+  },
+
+  "GET Endpoint": {
+    "prefix": "fastget",
+    "body": [
+      "@app.get(\"/${1:items}/{item_id}\",",
+      "         response_model=${2:ReturnModel},",
+      "         summary=\"${3:Get item by ID}\",",
+      "         tags=[\"${4:Items}\"])",
+      "async def read_item(",
+      "    item_id: int = Path(..., title=\"The ID of the item\", gt=0),",
+      "    q: Annotated[str | None, Query(max_length=50)] = None,",
+      "    current_user: ${5:User} = Depends(${6:get_current_user})",
+      "):",
+      "    \"\"\"",
+      "    Retrieve single item by ID",
+      "",
+      "    - **item_id**: Required item ID (must be positive integer)",
+      "    - **q**: Optional search query",
+      "    \"\"\"",
+      "    if item_id not in db:",
+      "        raise HTTPException(status_code=404, detail=\"Item not found\")",
+      "    return {\"item_id\": item_id, \"q\": q}"
+    ],
+    "description": "GET endpoint with parameters"
+  },
+
+  "POST Endpoint": {
+    "prefix": "fastpost",
+    "body": [
+      "@app.post(\"/${1:items}/\",",
+      "          status_code=status.HTTP_201_CREATED,",
+      "          response_model=${2:ItemModel},",
+      "          tags=[\"${3:Items}\"])",
+      "async def create_item(",
+      "    item: ${2:ItemModel},",
+      "    background_tasks: BackgroundTasks,",
+      "    current_user: ${4:User} = Depends(${5:verify_user})",
+      "):",
+      "    \"\"\"",
+      "    Create new item with full validation",
+      "",
+      "    - **item**: Item data (automatically validated)",
+      "    \"\"\"",
+      "    background_tasks.add_task(${6:log_creation}, item)",
+      "    return db.save(item)"
+    ],
+    "description": "POST endpoint with background task"
+  },
+
+  "Security Setup": {
+    "prefix": "fastsecurity",
+    "body": [
+      "# Password hashing",
+      "pwd_context = CryptContext(schemes=[\"bcrypt\"], deprecated=\"auto\")",
+      "",
+      "# JWT Configuration",
+      "SECRET_KEY = \"${1:your-secret-key}\"",
+      "ALGORITHM = \"HS256\"",
+      "ACCESS_TOKEN_EXPIRE_MINUTES = 30",
+      "",
+      "# OAuth2 scheme",
+      "oauth2_scheme = OAuth2PasswordBearer(tokenUrl=\"token\")",
+      "",
+      "# User verification",
+      "def verify_password(plain_password, hashed_password):",
+      "    return pwd_context.verify(plain_password, hashed_password)",
+      "",
+      "# Token creation",
+      "def create_access_token(data: dict, expires_delta: timedelta | None = None):",
+      "    to_encode = data.copy()",
+      "    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))",
+      "    to_encode.update({\"exp\": expire})",
+      "    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)"
+    ],
+    "description": "Authentication and security setup"
+  },
+
+  "Dependency Injection": {
+    "prefix": "fastdep",
+    "body": [
+      "async def ${1:get_db}():",
+      "    db = ${2:SessionLocal}()",
+      "    try:",
+      "        yield db",
+      "    finally:",
+      "        db.close()",
+      "",
+      "def ${3:verify_token}(token: str = Depends(oauth2_scheme)):",
+      "    try:",
+      "        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])",
+      "        return payload",
+      "    except JWTError:",
+      "        raise HTTPException(",
+      "            status_code=401,",
+      "            detail=\"Invalid credentials\",",
+      "            headers={\"WWW-Authenticate\": \"Bearer\"}",
+      "        )"
+    ],
+    "description": "Dependency injection examples"
+  },
+
+  "CORS Setup": {
+    "prefix": "fastcors",
+    "body": [
+      "app.add_middleware(",
+      "    CORSMiddleware,",
+      "    allow_origins=[\"http://localhost:3000\"],",
+      "    allow_credentials=True,",
+      "    allow_methods=[\"*\"],",
+      "    allow_headers=[\"*\"],",
+      "    expose_headers=[\"X-Custom-Header\"]",
+      ")"
+    ],
+    "description": "Configure CORS middleware"
+  },
+
+  "File Upload": {
+    "prefix": "fastupload",
+    "body": [
+      "@app.post(\"/upload/\")",
+      "async def upload_file(",
+      "    file: Annotated[UploadFile, File(description=\"Select a file to upload\")],",
+      "    token: str = Form(...)",
+      "):",
+      "    \"\"\"",
+      "    Upload file with authentication token",
+      "    \"\"\"",
+      "    contents = await file.read()",
+      "    # Save file to disk or cloud storage",
+      "    return {\"filename\": file.filename, \"size\": len(contents)}"
+    ],
+    "description": "File upload endpoint"
+  },
+
+  "WebSocket Endpoint": {
+    "prefix": "fastws",
+    "body": [
+      "@app.websocket(\"/ws/{client_id}\")",
+      "async def websocket_endpoint(",
+      "    websocket: WebSocket,",
+      "    client_id: int,",
+      "    db: Session = Depends(get_db)",
+      "):",
+      "    await websocket.accept()",
+      "    try:",
+      "        while True:",
+      "            data = await websocket.receive_json()",
+      "            # Process data",
+      "            await websocket.send_json({\"response\": \"Message received\"})",
+      "    except WebSocketDisconnect:",
+      "        # Handle disconnect",
+      "        pass"
+    ],
+    "description": "WebSocket endpoint"
+  },
+
+  "Middleware Example": {
+    "prefix": "fastmiddle",
+    "body": [
+      "@app.middleware(\"http\")",
+      "async def ${1:add_process_time_header}(request: Request, call_next):",
+      "    start_time = time.time()",
+      "    response = await call_next(request)",
+      "    process_time = time.time() - start_time",
+      "    response.headers[\"X-Process-Time\"] = str(process_time)",
+      "    return response"
+    ],
+    "description": "Custom middleware"
+  },
+
+  "Testing Client": {
+    "prefix": "fasttest",
+    "body": [
+      "from fastapi.testclient import TestClient",
+      "client = TestClient(app)",
+      "",
+      "def test_read_item():",
+      "    response = client.get(\"/items/42\", headers={\"Authorization\": \"Bearer testtoken\"})",
+      "    assert response.status_code == 200",
+      "    assert response.json() == {\"item_id\": 42}"
+    ],
+    "description": "Test client example"
+  },
+
+  "Static Files": {
+    "prefix": "faststatic",
+    "body": [
+      "app.mount(\"/static\", StaticFiles(directory=\"static\"), name=\"static\")"
+    ],
+    "description": "Serve static files"
+  },
+
+  "Templates Setup": {
+    "prefix": "fasttemplates",
+    "body": [
+      "templates = Jinja2Templates(directory=\"templates\")",
+      "",
+      "@app.get(\"/\", response_class=HTMLResponse)",
+      "async def read_root(request: Request):",
+      "    return templates.TemplateResponse(",
+      "        \"index.html\",",
+      "        {\"request\": request, \"message\": \"Hello World\"}",
+      "    )"
+    ],
+    "description": "Jinja2 templates setup"
+  },
+
+  "Database Session": {
+    "prefix": "fastdb",
+    "body": [
+      "from sqlalchemy import create_engine",
+      "from sqlalchemy.ext.declarative import declarative_base",
+      "from sqlalchemy.orm import sessionmaker",
+      "",
+      "SQLALCHEMY_DATABASE_URL = \"${1:sqlite:///./test.db}\"",
+      "",
+      "engine = create_engine(",
+      "    SQLALCHEMY_DATABASE_URL,",
+      "    connect_args={\"check_same_thread\": False}  # SQLite only",
+      ")",
+      "SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)",
+      "Base = declarative_base()"
+    ],
+    "description": "SQLAlchemy database setup"
+  },
+
+  "Rate Limiting": {
+    "prefix": "fastlimit",
+    "body": [
+      "from fastapi import Request",
+      "from slowapi import Limiter, _rate_limit_exceeded_handler",
+      "from slowapi.util import get_remote_address",
+      "from slowapi.errors import RateLimitExceeded",
+      "",
+      "limiter = Limiter(key_func=get_remote_address)",
+      "app.state.limiter = limiter",
+      "app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)",
+      "",
+      "@app.get(\"/limited/\")",
+      "@limiter.limit(\"${1:5}/minute\")",
+      "async def limited_route(request: Request):",
+      "    return {\"message\": \"Rate limited endpoint\"}"
+    ],
+    "description": "Implement rate limiting with slowapi"
+  },
+
+  "Custom Response Class": {
+    "prefix": "fastresponse",
+    "body": [
+      "from fastapi.responses import ORJSONResponse",
+      "",
+      "@app.get(\"/custom-response/\", response_class=ORJSONResponse)",
+      "async def custom_response():",
+      "    return ORJSONResponse(",
+      "        content={\"message\": \"Faster JSON response\"},",
+      "        headers={\"X-Custom-Header\": \"value\"}",
+      "    )"
+    ],
+    "description": "Custom response with ORJSON for performance"
+  },
+
+  "Health Check": {
+    "prefix": "fasthealth",
+    "body": [
+      "@app.get(\"/health/\", include_in_schema=False)",
+      "async def health_check():",
+      "    return {\"status\": \"ok\", \"timestamp\": datetime.utcnow().isoformat()}"
+    ],
+    "description": "Simple health check endpoint"
+  },
+
+  "Pagination": {
+    "prefix": "fastpage",
+    "body": [
+      "def ${1:paginate}(results: list, page: int = 1, size: int = 10):",
+      "    start = (page - 1) * size",
+      "    end = start + size",
+      "    return {",
+      "        \"results\": results[start:end],",
+      "        \"page\": page,",
+      "        \"size\": size,",
+      "        \"total\": len(results)",
+      "    }",
+      "",
+      "@app.get(\"/items/\")",
+      "async def list_items(",
+      "    page: int = Query(1, gt=0),",
+      "    page_size: int = Query(10, gt=0, le=100)",
+      "):",
+      "    all_items = db.get_all_items()",
+      "    return ${1:paginate}(all_items, page, page_size)"
+    ],
+    "description": "Pagination helper function"
+  },
+
+  "WebSocket Broadcast": {
+    "prefix": "fastbroadcast",
+    "body": [
+      "from fastapi import WebSocket, WebSocketDisconnect",
+      "from collections import defaultdict",
+      "",
+      "class ${1:ConnectionManager}:",
+      "    def __init__(self):",
+      "        self.rooms: dict = defaultdict(dict)",
+      "",
+      "    async def connect(self, websocket: WebSocket, room: str, user_id: str):",
+      "        await websocket.accept()",
+      "        self.rooms[room][user_id] = websocket",
+      "",
+      "    async def broadcast(self, room: str, message: str):",
+      "        for connection in self.rooms[room].values():",
+      "            await connection.send_text(message)",
+      "",
+      "manager = ${1:ConnectionManager}()"
+    ],
+    "description": "WebSocket broadcast manager"
+  },
+
+  "SQLAlchemy Model": {
+    "prefix": "fastsqla",
+    "body": [
+      "from sqlalchemy import Column, Integer, String, DateTime",
+      "from sqlalchemy.sql import func",
+      "",
+      "class ${1:User}(Base):",
+      "    __tablename__ = \"${2:users}\"",
+      "",
+      "    id = Column(Integer, primary_key=True, index=True)",
+      "    email = Column(String, unique=True, index=True)",
+      "    hashed_password = Column(String)",
+      "    created_at = Column(DateTime(timezone=True), server_default=func.now())",
+      "    updated_at = Column(DateTime(timezone=True), onupdate=func.now())",
+      "",
+      "    def __repr__(self):",
+      "        return f\"<{self.__class__.__name__} {self.email}>\""
+    ],
+    "description": "SQLAlchemy ORM model"
+  },
+
+  "Role-Based Access": {
+    "prefix": "fastroles",
+    "body": [
+      "def ${1:require_admin}(current_user: User = Depends(get_current_user)):",
+      "    if current_user.role != \"admin\":",
+      "        raise HTTPException(",
+      "            status_code=403,",
+      "            detail=\"Insufficient permissions\"",
+      "        )",
+      "    return current_user",
+      "",
+      "@app.delete(\"/admin/items/{item_id}\")",
+      "async def admin_delete_item(",
+      "    item_id: int,",
+      "    user: User = Depends(${1:require_admin})",
+      "):",
+      "    # Admin-only delete operation",
+      "    ..."
+    ],
+    "description": "Role-based access control"
+  },
+
+  "Async Database": {
+    "prefix": "fastasyncdb",
+    "body": [
+      "from databases import Database",
+      "",
+      "DATABASE_URL = \"${1:postgresql://user:pass@localhost/dbname}\"",
+      "database = Database(DATABASE_URL)",
+      "",
+      "@app.on_event(\"startup\")",
+      "async def startup():",
+      "    await database.connect()",
+      "",
+      "@app.on_event(\"shutdown\")",
+      "async def shutdown():",
+      "    await database.disconnect()",
+      "",
+      "@app.get(\"/async-items/\")",
+      "async def read_async_items():",
+      "    query = \"SELECT * FROM items\"",
+      "    return await database.fetch_all(query)"
+    ],
+    "description": "Async database connection"
+  },
+
+  "Custom Exception": {
+    "prefix": "fastexcept",
+    "body": [
+      "class ${1:CustomException}(HTTPException):",
+      "    def __init__(self, detail: str):",
+      "        super().__init__(",
+      "            status_code=400,",
+      "            detail=detail,",
+      "            headers={\"X-Error\": \"Custom Error\"}",
+      "        )",
+      "",
+      "@app.exception_handler(${1:CustomException})",
+      "async def ${2:custom_exception_handler}(request: Request, exc: ${1:CustomException}):",
+      "    return JSONResponse(",
+      "        status_code=exc.status_code,",
+      "        content={\"error\": exc.detail},",
+      "        headers=exc.headers",
+      "    )"
+    ],
+    "description": "Custom exception with handler"
+  },
+
+  "Email Background": {
+    "prefix": "fastemail",
+    "body": [
+      "from fastapi_mail import FastMail, MessageSchema, ConnectionConfig",
+      "",
+      "conf = ConnectionConfig(",
+      "    MAIL_USERNAME=\"user@example.com\",",
+      "    MAIL_PASSWORD=\"password\",",
+      "    MAIL_FROM=\"noreply@domain.com\",",
+      "    MAIL_PORT=587,",
+      "    MAIL_SERVER=\"smtp.example.com\",",
+      "    MAIL_TLS=True,",
+      "    MAIL_SSL=False",
+      ")",
+      "",
+      "async def ${1:send_welcome_email}(email: str):",
+      "    message = MessageSchema(",
+      "        subject=\"Welcome!\",",
+      "        recipients=[email],",
+      "        body=\"<strong>Thanks for joining!</strong>\",",
+      "        subtype=\"html\"",
+      "    )",
+      "    fm = FastMail(conf)",
+      "    await fm.send_message(message)",
+      "",
+      "@app.post(\"/register/\")",
+      "async def register_user(",
+      "    user: UserCreate,",
+      "    background_tasks: BackgroundTasks",
+      "):",
+      "    # Create user logic",
+      "    background_tasks.add_task(${1:send_welcome_email}, user.email)",
+      "    return {\"message\": \"Registration successful\"}"
+    ],
+    "description": "Background email sending"
+  },
+
+  "Redis Caching": {
+    "prefix": "fastcache",
+    "body": [
+      "from redis import asyncio as aioredis",
+      "from fastapi_cache import FastAPICache",
+      "from fastapi_cache.backends.redis import RedisBackend",
+      "from fastapi_cache.decorator import cache",
+      "",
+      "@app.on_event(\"startup\")",
+      "async def startup():",
+      "    redis = aioredis.from_url(\"redis://localhost\")",
+      "    FastAPICache.init(RedisBackend(redis), prefix=\"fastapi-cache\")",
+      "",
+      "@app.get(\"/cached-data/\")",
+      "@cache(expire=60)  # Cache for 60 seconds",
+      "async def get_cached_data():",
+      "    # Expensive operation",
+      "    return {\"data\": \"expensive to compute\"}"
+    ],
+    "description": "Redis caching implementation"
+  },
+
+  "Logging Setup": {
+    "prefix": "fastlog",
+    "body": [
+      "import logging",
+      "from logging.config import dictConfig",
+      "from fastapi import Request",
+      "",
+      "LOGGING_CONFIG = {",
+      "    \"version\": 1,",
+      "    \"disable_existing_loggers\": False,",
+      "    \"formatters\": {",
+      "        \"standard\": {\"format\": \"%(asctime)s [%(levelname)s] %(name)s: %(message)s\"}",
+      "    },",
+      "    \"handlers\": {",
+      "        \"console\": {",
+      "            \"class\": \"logging.StreamHandler\",",
+      "            \"formatter\": \"standard\",",
+      "        }",
+      "    },",
+      "    \"loggers\": {",
+      "        \"\": {\"handlers\": [\"console\"], \"level\": \"INFO\"},",
+      "        \"uvicorn\": {\"level\": \"INFO\"},",
+      "        \"uvicorn.access\": {\"level\": \"WARNING\"}",
+      "    },",
+      "}",
+      "",
+      "dictConfig(LOGGING_CONFIG)",
+      "logger = logging.getLogger(__name__)",
+      "",
+      "@app.middleware(\"http\")",
+      "async def log_requests(request: Request, call_next):",
+      "    logger.info(f\"Request: {request.method} {request.url}\")",
+      "    response = await call_next(request)",
+      "    logger.info(f\"Response: {response.status_code}\")",
+      "    return response"
+    ],
+    "description": "Advanced logging configuration"
+  }
+}
