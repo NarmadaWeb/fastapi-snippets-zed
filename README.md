@@ -1,207 +1,124 @@
-# 🚀 Ultimate FastAPI Snippets Collection
+# 🚀 Ultimate FastAPI Snippets for Zed
 
-![FastAPI Logo](https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png)
-![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688?logo=fastapi)
-![Python](https://img.shields.io/badge/Language-Python-3776AB?logo=python)
+<div align="center">
+  <img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" alt="FastAPI Logo" width="200"/>
+  <br>
+  <p>
+    <a href="https://marketplace.zed.dev/extensions/fastapi-snippets">
+      <img alt="Zed Marketplace" src="https://img.shields.io/badge/Zed-Marketplace-8A2BE2?logo=zed&logoColor=white">
+    </a>
+    <img alt="Language" src="https://img.shields.io/badge/Python-3.8%2B-blue?logo=python&logoColor=white">
+    <img alt="Framework" src="https://img.shields.io/badge/FastAPI-0.100%2B-009688?logo=fastapi&logoColor=white">
+  </p>
+</div>
 
-> Accelerate your FastAPI development with 50+ production-ready code snippets covering everything from authentication to deployment!
+Supercharge your FastAPI development in the [Zed code editor](https://zed.dev/) with this collection of production-ready code snippets. From bootstrapping your app to deploying advanced features, these snippets are designed to follow modern best practices and save you time.
 
-## 🌟 Features
+## ✨ Features
 
-- **50+ meticulously crafted snippets** for FastAPI development
-- **Production-ready patterns** following best practices
-- **Comprehensive coverage** of essential FastAPI features
-- **Time-saving templates** for common development tasks
-- **Regularly updated** with new patterns and optimizations
+- **Modern Syntax**: Uses modern Python features like `Annotated` for clear, type-safe code.
+- **Comprehensive**: Covers everything from basic app setup to advanced topics like WebSockets, caching, and background tasks.
+- **Pydantic v2 Ready**: Snippets are designed to work with the latest Pydantic features.
+- **Asynchronous by Default**: Prioritizes `async` patterns for high-performance applications.
+- **Well-Documented**: Each snippet comes with a clear description of what it does and how to use it.
 
+## ⚡️ New in this Version
 
-## 🧩 Snippet Categories
+This version introduces powerful new snippets and modernizes existing ones for a better development experience.
 
-| Category | Snippets | Description |
-|----------|----------|-------------|
-| **⚡ Core** | `fastimp`, `fastapp`, `fastrouter` | Essential imports, app instance, routers |
-| **🔒 Security** | `fastsecurity`, `fastoauth`, `fastroles` | Authentication, OAuth2, RBAC |
-| **💾 Database** | `fastdb`, `fastsqla`, `fastasyncdb` | SQLAlchemy models, async DB connections |
-| **📡 Endpoints** | `fastget`, `fastpost`, `fastupload` | REST endpoints, file uploads |
-| **🚀 Advanced** | `fastws`, `fastcache`, `fastemail` | WebSockets, Redis caching, background emails |
-| **🛠️ Operations** | `fasthealth`, `fastlog` | health checks, logging |
-| **🧪 Testing** | `fasttest`, `fastexcept` | Test clients, custom exceptions |
+- **`fastsettings`**: Manage your application's configuration effortlessly using Pydantic's `BaseSettings`.
+- **`fastcrud`**: A generic, reusable router for basic Create, Read, Update, Delete operations with SQLAlchemy.
+- **`faststream`**: Implement streaming responses for large data or video feeds.
+- **Modernized Snippets**: All existing snippets have been updated to use the latest FastAPI and Pydantic best practices, including `Annotated` type hints and Pydantic v2 `model_config`.
 
-## 🚀 Top 10 Most Useful Snippets
+### Example: `fastsettings`
+Quickly define and load configuration from environment variables:
+```python
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-1. **`fastsecurity`** - Complete JWT authentication setup
-   ```python
-   # Password hashing
-   pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+class Settings(BaseSettings):
+    app_name: str = "Awesome API"
+    database_url: str
+    secret_key: str
 
-   # JWT Configuration
-   SECRET_KEY = "your-secret-key"
-   ALGORITHM = "HS256"
-   ACCESS_TOKEN_EXPIRE_MINUTES = 30
-   ```
+    model_config = SettingsConfigDict(env_file=".env")
 
-2. **`fastcrud`** - Full CRUD operations template
-   ```python
-   @router.get("/", response_model=List[Model])
-   def read_items(db: Session = Depends(get_db)):
-       return db.query(Model).all()
-   ```
-
-3. **`fastcache`** - Redis caching implementation
-   ```python
-   @app.on_event("startup")
-   async def startup():
-       redis = aioredis.from_url("redis://localhost")
-       FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
-
-   @app.get("/cached-data/")
-   @cache(expire=60)
-   async def get_cached_data():
-       return {"data": "expensive to compute"}
-   ```
-
-4. **`fastlimit`** - API rate limiting
-   ```python
-   limiter = Limiter(key_func=get_remote_address)
-   app.state.limiter = limiter
-
-   @app.get("/limited/")
-   @limiter.limit("5/minute")
-   async def limited_route(request: Request):
-       return {"message": "Rate limited endpoint"}
-   ```
-
-5. **`fastemail`** - Background email sending
-   ```python
-   async def send_welcome_email(email: str):
-       message = MessageSchema(
-           subject="Welcome!",
-           recipients=[email],
-           body="<strong>Thanks for joining!</strong>",
-           subtype="html"
-       )
-       await fm.send_message(message)
-   ```
-
-6. **`fastasyncdb`** - Async database connection
-   ```python
-   database = Database(DATABASE_URL)
-
-   @app.on_event("startup")
-   async def startup():
-       await database.connect()
-
-   @app.get("/async-items/")
-   async def read_async_items():
-       return await database.fetch_all("SELECT * FROM items")
-   ```
-
-7. **`fastresponse`** - High-performance ORJSON response
-   ```python
-   @app.get("/custom-response/", response_class=ORJSONResponse)
-   async def custom_response():
-       return ORJSONResponse(
-           content={"message": "Faster JSON response"},
-           headers={"X-Custom-Header": "value"}
-       )
-   ```
-
-8. **`fastbroadcast`** - WebSocket broadcast manager
-   ```python
-   class ConnectionManager:
-       def __init__(self):
-           self.rooms: dict = defaultdict(dict)
-
-       async def broadcast(self, room: str, message: str):
-           for connection in self.rooms[room].values():
-               await connection.send_text(message)
-   ```
-
-9. **`fastlog`** - Professional logging configuration
-    ```python
-    LOGGING_CONFIG = {
-        "version": 1,
-        "formatters": {"standard": {"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"}},
-        "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "standard"}},
-        "loggers": {"": {"handlers": ["console"], "level": "INFO"}}
-    }
-    ```
-10. **`fastsqla`** - SQLAlchemy database setup
-	```python
-	from sqlalchemy import create_engine
-    from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy.orm import sessionmaker
-
-    SQLALCHEMY_DATABASE_URL = \"${1:sqlite:///./test.db}\"
-
-    engine = create_engine(
-          SQLALCHEMY_DATABASE_URL,
-          connect_args={\"check_same_thread\": False}  # SQLite only",
-    ),
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine),
-    Base = declarative_base()
-	```
-
-## 📊 Snippet Usage Statistics
-
-```mermaid
-pie
-    title Snippet Category Usage
-    "Core" : 20
-    "Security" : 15
-    "Database" : 18
-    "Endpoints" : 22
-    "Advanced" : 15
-    "Operations" : 10
+settings = Settings()
 ```
 
-## 🛠️ Customization Tips
+### Example: `fastcrud`
+Generate a full set of CRUD endpoints for a SQLAlchemy model with a single function:
+```python
+# In your router file
+from . import models, schemas
+from .database import get_db
 
-1. **Personalize Placeholders** - Replace all `${...}` variables with your specific values
-   ```python
-   app = FastAPI(
-       title="My Awesome API",  # ← Change this
-       version="1.0.0"         # ← And this
-   )
-   ```
+# Create the router
+crud_router = create_crud_router(
+    prefix="/users",
+    tags=["Users"],
+    db_session=get_db,
+    db_model=models.User,
+    schema_read=schemas.UserRead,
+    schema_create=schemas.UserCreate,
+    schema_update=schemas.UserUpdate,
+)
 
-2. **Combine Snippets** - Create powerful combinations:
-   - `fastsecurity` + `fastroles` = Full authentication with RBAC
-   - `fastdb` + `fastcrud` = Complete database workflow
-   - `fastcache` + `fastasyncdb` = High-performance data layer
+app.include_router(crud_router)
+```
 
-3. **Extend for Your Needs** - Use snippets as foundations for custom implementations:
-   ```python
-   # Original
-   @cache(expire=60)
+## 📚 Full Snippet Reference
 
-   # Extended with custom key
-   @cache(expire=300, key_builder=custom_key_builder)
-   ```
+Here is a complete list of all available snippets.
 
-## 🤝 Contribution Guidelines
+| Prefix | Name | Description |
+|---|---|---|
+| `fastapp` | FastAPI App Instance | Creates a new FastAPI application instance with rich metadata. |
+| `fastrouter` | APIRouter Instance | Creates a new APIRouter for modular endpoint organization. |
+| `fastmodel` | Pydantic Model (v2) | Defines a Pydantic model with modern validation and schema examples (Pydantic v2). |
+| `fastget` | GET Endpoint | Defines a GET endpoint with path variables, dependencies, and response model. |
+| `fastpost` | POST Endpoint | Defines a POST endpoint with a request body, background tasks, and a 201 status code. |
+| `fastcrud` | Generic CRUD Router | Creates a generic CRUD router for a SQLAlchemy model. |
+| `faststream` | Streaming Response | Defines an endpoint that streams data, e.g., for large files or live data. |
+| `fastsettings` | Pydantic Settings | Manages application configuration using Pydantic's BaseSettings for env variables. |
+| `fastsecurity` | JWT Security Setup | Sets up JWT authentication with token creation and user dependency. |
+| `fastdep` | Database Dependency | Creates a dependency for yielding a database session per request. |
+| `fastcors` | CORS Middleware | Configures Cross-Origin Resource Sharing (CORS) middleware. |
+| `fastupload` | File Upload Endpoint | Defines an endpoint for handling file uploads. |
+| `fastws` | WebSocket Endpoint | Defines a basic WebSocket endpoint for real-time communication. |
+| `fastmiddle` | Custom Middleware | Adds custom middleware, e.g., to calculate and add process time to headers. |
+| `fasttest` | Pytest Test Client | Sets up a TestClient for use with Pytest to test API endpoints. |
+| `faststatic` | Static Files Mounting | Mounts a directory to serve static files like CSS, JS, and images. |
+| `fasttemplates` | Jinja2 Templates | Configures Jinja2 for rendering HTML templates. |
+| `fastdb` | SQLAlchemy Sync Setup | Sets up a synchronous SQLAlchemy engine and session maker. |
+| `fastlimit` | Rate Limiting | Implements API rate limiting using the slowapi library. |
+| `fastresponse` | ORJSON Response | Uses ORJSONResponse for faster JSON serialization in an endpoint. |
+| `fasthealth` | Health Check Endpoint | Creates a simple health check endpoint, often excluded from public docs. |
+| `fastpage` | Pagination Helper | Provides a generic, reusable pagination function and response model. |
+| `fastbroadcast` | WebSocket Broadcast Manager | Creates a manager to handle multiple WebSocket connections for broadcasting. |
+| `fastsqla` | SQLAlchemy ORM Model | Defines a SQLAlchemy ORM model class for database table mapping. |
+| `fastroles` | Role-Based Access Control | Implements a flexible dependency for role-based access control (RBAC). |
+| `fastasyncdb` | Async Database Connection | Handles the lifecycle of an asynchronous database connection. |
+| `fastexcept` | Custom Exception Handler | Defines a custom exception and its corresponding handler. |
+| `fastemail` | Background Email Sending | Adds an email sending function to run in the background. |
+| `fastcache` | Redis Caching | Integrates Redis for caching endpoint responses. |
+| `fastlog` | Structured Logging | Configures structured logging using Python's dictConfig. |
 
-We welcome contributions! Here's how to help:
+## 🤝 Contributing
 
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/new-snippet`)
-3. Add your snippet to `snippets.json`
-4. Update the README if needed
-5. Submit a pull request
+Contributions are welcome! If you have a snippet that you think would be a great addition, please feel free to open a pull request.
 
-**Snippet Requirements:**
-- Must solve a common FastAPI problem
-- Follow FastAPI best practices
-- Include proper documentation
-- Have a unique prefix starting with "fast"
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/my-new-snippet`).
+3.  Add your snippet to `snippets/python.json`.
+4.  Update this README file to include your new snippet.
+5.  Open a pull request with a clear description of your changes.
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
-
 <div align="center">
-  <br>
-  <strong>Happy Coding! 🐍⚡</strong>
+  <strong>Happy Coding! 🐍</strong>
 </div>
