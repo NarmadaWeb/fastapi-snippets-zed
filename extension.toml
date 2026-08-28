@@ -1,9 +1,9 @@
 id = "fastapi-snippets"
 name = "Fastapi Snippets"
-version = "0.2.0"
+version = "0.3.0"
 schema_version = 1
 authors = ["RajaSunrise <indra020204@gmail.com>"]
-description = "A comprehensive collection of production-ready FastAPI snippets for the Zed code editor. Boost your development speed with templates for endpoints, security, database models, and more."
+description = "A comprehensive collection of production-ready FastAPI snippets for the Zed code editor. Boost your development speed with templates for endpoints, security, database models, FastAPI Cloud, and more."
 repository = "https://github.com/NarmadaWeb/fastapi-snippets-zed"
 
 snippets = "./snippets/python.json"

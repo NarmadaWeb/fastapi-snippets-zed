@@ -24,6 +24,101 @@
     "description": "Creates a new FastAPI application instance with rich metadata."
   },
 
+  "Cloud-Ready FastAPI App": {
+    "prefix": "fastcloudapp",
+    "body": [
+      "from contextlib import asynccontextmanager",
+      "from fastapi import FastAPI",
+      "from fastapi.middleware.cors import CORSMiddleware",
+      "",
+      "@asynccontextmanager",
+      "async def lifespan(app: FastAPI):",
+      "    # Startup tasks (e.g. connect DB, warmup caches)",
+      "    yield",
+      "    # Teardown tasks (e.g. close connections)",
+      "",
+      "app = FastAPI(",
+      "    title=\"${1:FastAPI Cloud App}\",",
+      "    description=\"${2:Production-ready FastAPI app for FastAPI Cloud & CLI.}\",",
+      "    version=\"${3:0.1.0}\",",
+      "    lifespan=lifespan,",
+      "    docs_url=\"/docs\",",
+      "    redoc_url=\"/redoc\",",
+      ")",
+      "",
+      "app.add_middleware(",
+      "    CORSMiddleware,",
+      "    allow_origins=[\"${4:*}\"],",
+      "    allow_credentials=True,",
+      "    allow_methods=[\"*\"],",
+      "    allow_headers=[\"*\"],",
+      ")"
+    ],
+    "description": "Creates a production-ready FastAPI app instance configured for FastAPI Cloud & CLI."
+  },
+
+  "Lifespan Context Manager": {
+    "prefix": "fastlifespan",
+    "body": [
+      "from contextlib import asynccontextmanager",
+      "from fastapi import FastAPI",
+      "",
+      "@asynccontextmanager",
+      "async def lifespan(app: FastAPI):",
+      "    # Startup: Initialize resources (DB, cache, external clients)",
+      "    ${1:# startup logic}",
+      "    yield",
+      "    # Shutdown: Clean up resources and close connections",
+      "    ${2:# shutdown logic}",
+      "",
+      "app = FastAPI(lifespan=lifespan)"
+    ],
+    "description": "Sets up a modern FastAPI lifespan context manager for startup and shutdown events."
+  },
+
+  "Cloud Health & Readiness Probes": {
+    "prefix": "fastcloudhealth",
+    "body": [
+      "from fastapi import APIRouter, status",
+      "",
+      "router = APIRouter(tags=[\"${1:Monitoring}\"])",
+      "",
+      "@router.get(\"/healthz\", status_code=status.HTTP_200_OK, include_in_schema=False)",
+      "async def liveness():",
+      "    \"\"\"Liveness probe to verify the application process is up.\"\"\"",
+      "    return {\"status\": \"healthy\"}",
+      "",
+      "@router.get(\"/readyz\", status_code=status.HTTP_200_OK, include_in_schema=False)",
+      "async def readiness():",
+      "    \"\"\"Readiness probe to verify external dependencies (e.g. DB, cache) are healthy.\"\"\"",
+      "    return {\"status\": \"ready\"}"
+    ],
+    "description": "Defines liveness (/healthz) and readiness (/readyz) probes for cloud deployments."
+  },
+
+  "FastAPI Cloud Settings": {
+    "prefix": "fastcloudsettings",
+    "body": [
+      "from pydantic import Field",
+      "from pydantic_settings import BaseSettings, SettingsConfigDict",
+      "",
+      "class Settings(BaseSettings):",
+      "    environment: str = Field(default=\"production\", alias=\"ENVIRONMENT\")",
+      "    app_name: str = Field(default=\"${1:FastAPI App}\", alias=\"APP_NAME\")",
+      "    database_url: str = Field(..., alias=\"DATABASE_URL\")",
+      "    secret_key: str = Field(..., alias=\"SECRET_KEY\")",
+      "",
+      "    model_config = SettingsConfigDict(",
+      "        env_file=\".env\",",
+      "        env_file_encoding=\"utf-8\",",
+      "        extra=\"ignore\",",
+      "    )",
+      "",
+      "settings = Settings()"
+    ],
+    "description": "Manages cloud environment variables and secrets using Pydantic Settings."
+  },
+
   "APIRouter Instance": {
     "prefix": "fastrouter",
     "body": [
@@ -128,7 +223,7 @@
       "",
       "    @router.post(\"/\", response_model=schema_read, status_code=201)",
       "    def create_item(item: schema_create, db: Annotated[Session, Depends(db_session)]):",
-      "        db_item = db_model(**item.dict())",
+      "        db_item = db_model(**item.model_dump())",
       "        db.add(db_item)",
       "        db.commit()",
       "        db.refresh(db_item)",
@@ -448,7 +543,9 @@
       ") -> PaginatedResponse[T]:",
       "    start = (page - 1) * size",
       "    paginated_items = items[start : start + size]",
-      "    return PaginatedResponse(total=len(items), page=page, size=size, results=paginated_items)"
+      "    return PaginatedResponse(total=len(items), page=page, size=size, results=paginated_items)",
+      "",
+      "    model_config = {\"arbitrary_types_allowed\": True}"
     ],
     "description": "Provides a generic, reusable pagination function and response model."
   },
@@ -522,23 +619,22 @@
   "Async Database Connection": {
     "prefix": "fastasyncdb",
     "body": [
+      "from contextlib import asynccontextmanager",
       "import databases",
       "from fastapi import FastAPI",
       "",
       "DATABASE_URL = \"${1:postgresql://user:password@host/database}\"",
       "database = databases.Database(DATABASE_URL)",
       "",
-      "app = FastAPI()",
-      "",
-      "@app.on_event(\"startup\")",
-      "async def startup():",
+      "@asynccontextmanager",
+      "async def lifespan(app: FastAPI):",
       "    await database.connect()",
+      "    yield",
+      "    await database.disconnect()",
       "",
-      "@app.on_event(\"shutdown\")",
-      "async def shutdown():",
-      "    await database.disconnect()"
+      "app = FastAPI(lifespan=lifespan)"
     ],
-    "description": "Handles the lifecycle of an asynchronous database connection."
+    "description": "Handles the lifecycle of an asynchronous database connection using modern lifespan."
   },
 
   "Custom Exception Handler": {
@@ -580,25 +676,28 @@
   "Redis Caching": {
     "prefix": "fastcache",
     "body": [
+      "from contextlib import asynccontextmanager",
       "from fastapi import FastAPI",
       "from redis import asyncio as aioredis",
       "from fastapi_cache import FastAPICache",
       "from fastapi_cache.backends.redis import RedisBackend",
       "from fastapi_cache.decorator import cache",
       "",
-      "app = FastAPI()",
-      "",
-      "@app.on_event(\"startup\")",
-      "async def startup():",
-      "    redis = aioredis.from_url(\"redis://localhost\")",
+      "@asynccontextmanager",
+      "async def lifespan(app: FastAPI):",
+      "    redis = aioredis.from_url(\"${1:redis://localhost}\")",
       "    FastAPICache.init(RedisBackend(redis), prefix=\"fastapi-cache\")",
+      "    yield",
+      "    await redis.close()",
+      "",
+      "app = FastAPI(lifespan=lifespan)",
       "",
       "@app.get(\"/cached-route\")",
-      "@cache(expire=${1:60}) # Cache for 60 seconds",
+      "@cache(expire=${2:60}) # Cache for 60 seconds",
       "async def get_cached_data():",
       "    return {\"message\": \"This data is cached\"}"
     ],
-    "description": "Integrates Redis for caching endpoint responses."
+    "description": "Integrates Redis for caching endpoint responses using lifespan handler."
   },
 
   "Structured Logging": {
